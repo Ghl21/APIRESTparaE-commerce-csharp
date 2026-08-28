@@ -1,0 +1,272 @@
+### =========================================================================
+### API REST para E-commerce - Peticiones de ejemplo
+### Ejecutables desde Visual Studio, VS Code (extension REST Client) o Rider.
+### Ejecute las peticiones en orden: el login guarda los tokens en variables.
+### =========================================================================
+
+@host = http://localhost:5080
+@contentType = application/json
+
+### 1. Estado del servicio
+GET {{host}}/health
+
+### 2. Registro de un cliente nuevo
+POST {{host}}/api/v1/auth/register
+Content-Type: {{contentType}}
+
+{
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "email": "juan.perez@example.com",
+  "password": "Cliente123$",
+  "confirmPassword": "Cliente123$",
+  "phoneNumber": "+52 55 1234 5678"
+}
+
+### 3. Login del cliente sembrado por los scripts SQL
+# @name loginCliente
+POST {{host}}/api/v1/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "cliente@ecommerce.com",
+  "password": "Cliente123$"
+}
+
+@tokenCliente = {{loginCliente.response.body.accessToken}}
+@refreshCliente = {{loginCliente.response.body.refreshToken}}
+
+### 4. Login del administrador
+# @name loginAdmin
+POST {{host}}/api/v1/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@ecommerce.com",
+  "password": "Admin123$"
+}
+
+@tokenAdmin = {{loginAdmin.response.body.accessToken}}
+
+### 5. Perfil del usuario autenticado
+GET {{host}}/api/v1/auth/me
+Authorization: Bearer {{tokenCliente}}
+
+### 6. Renovar el access token (el refresh token rota)
+POST {{host}}/api/v1/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshCliente}}"
+}
+
+### 7. Categorías (público)
+GET {{host}}/api/v1/categories
+
+### 8. Catálogo con filtros, orden y paginación (público)
+GET {{host}}/api/v1/products?search=laptop&sortBy=price&sortDescending=false&pageNumber=1&pageSize=10
+
+### 9. Detalle de un producto
+GET {{host}}/api/v1/products/1
+
+### 10. Detalle por slug
+GET {{host}}/api/v1/products/slug/laptop-ultrabook-14-pulgadas
+
+### 11. Reseñas de un producto
+GET {{host}}/api/v1/products/1/reviews
+
+### 12. Crear o actualizar la reseña propia
+POST {{host}}/api/v1/products/3/reviews
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "rating": 4,
+  "title": "Buen teléfono",
+  "comment": "La batería rinde todo el día."
+}
+
+### 13. Direcciones del cliente
+GET {{host}}/api/v1/addresses
+Authorization: Bearer {{tokenCliente}}
+
+### 14. Registrar una dirección nueva
+POST {{host}}/api/v1/addresses
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "alias": "Oficina",
+  "recipientName": "María González",
+  "street": "Av. Insurgentes Sur 1000",
+  "street2": "Piso 5",
+  "city": "Ciudad de México",
+  "state": "CDMX",
+  "postalCode": "03100",
+  "country": "México",
+  "phoneNumber": "+52 55 1000 0002",
+  "isDefault": false
+}
+
+### 15. Ver el carrito
+GET {{host}}/api/v1/cart
+Authorization: Bearer {{tokenCliente}}
+
+### 16. Agregar un producto al carrito
+POST {{host}}/api/v1/cart/items
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "productId": 5,
+  "quantity": 2
+}
+
+### 17. Cambiar la cantidad de una línea
+PUT {{host}}/api/v1/cart/items/1
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "quantity": 3
+}
+
+### 18. Quitar una línea del carrito
+DELETE {{host}}/api/v1/cart/items/1
+Authorization: Bearer {{tokenCliente}}
+
+### 19. Checkout: convertir el carrito en pedido
+# @name crearPedido
+POST {{host}}/api/v1/orders
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "shippingAddressId": 1,
+  "notes": "Entregar por la tarde"
+}
+
+@pedidoId = {{crearPedido.response.body.id}}
+
+### 20. Pagar el pedido (tarjeta de prueba aprobada)
+POST {{host}}/api/v1/payments
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "orderId": {{pedidoId}},
+  "method": "CreditCard",
+  "cardNumber": "4111111111111111",
+  "cardHolderName": "MARIA GONZALEZ",
+  "expirationDate": "12/29",
+  "cvv": "123"
+}
+
+### 21. Pago rechazado (las tarjetas terminadas en 0000 se rechazan)
+POST {{host}}/api/v1/payments
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenCliente}}
+
+{
+  "orderId": {{pedidoId}},
+  "method": "CreditCard",
+  "cardNumber": "4111111111110000",
+  "cardHolderName": "MARIA GONZALEZ",
+  "expirationDate": "12/29",
+  "cvv": "123"
+}
+
+### 22. Mis pedidos
+GET {{host}}/api/v1/orders?pageNumber=1&pageSize=10
+Authorization: Bearer {{tokenCliente}}
+
+### 23. Detalle de un pedido
+GET {{host}}/api/v1/orders/{{pedidoId}}
+Authorization: Bearer {{tokenCliente}}
+
+### 24. Cancelar un pedido (devuelve el stock)
+POST {{host}}/api/v1/orders/{{pedidoId}}/cancel
+Authorization: Bearer {{tokenCliente}}
+
+### =========================================================================
+### Operaciones de administrador
+### =========================================================================
+
+### 25. Crear una categoría
+POST {{host}}/api/v1/categories
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "name": "Accesorios",
+  "description": "Complementos y periféricos",
+  "parentCategoryId": 1,
+  "isActive": true
+}
+
+### 26. Crear un producto
+POST {{host}}/api/v1/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "sku": "TEC-0001",
+  "name": "Teclado mecánico RGB",
+  "description": "Switches azules, retroiluminación configurable",
+  "price": 1899.00,
+  "discountPrice": 1599.00,
+  "stock": 25,
+  "categoryId": 1,
+  "mainImageUrl": "https://picsum.photos/seed/teclado/600/600",
+  "isActive": true,
+  "images": [
+    { "url": "https://picsum.photos/seed/teclado2/600/600", "altText": "Vista superior", "displayOrder": 1 }
+  ]
+}
+
+### 27. Ajustar el stock de un producto
+PATCH {{host}}/api/v1/products/1/stock
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "stock": 50
+}
+
+### 28. Cambiar el estado de un pedido
+PATCH {{host}}/api/v1/orders/{{pedidoId}}/status
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "status": "Processing"
+}
+
+### 29. Todos los pedidos (vista de administrador)
+GET {{host}}/api/v1/orders?status=Pending&pageNumber=1&pageSize=20
+Authorization: Bearer {{tokenAdmin}}
+
+### 30. Listado de usuarios
+GET {{host}}/api/v1/users?pageNumber=1&pageSize=20
+Authorization: Bearer {{tokenAdmin}}
+
+### 31. Asignar un rol a un usuario
+POST {{host}}/api/v1/users/2/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{tokenAdmin}}
+
+{
+  "roleName": "Admin"
+}
+
+### 32. Desactivar una cuenta (revoca sus sesiones)
+PATCH {{host}}/api/v1/users/2/status?isActive=false
+Authorization: Bearer {{tokenAdmin}}
+
+### 33. Cerrar sesión revocando el refresh token
+POST {{host}}/api/v1/auth/revoke
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshCliente}}"
+}

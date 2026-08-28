@@ -1,0 +1,1008 @@
+{
+  "info": {
+    "_postman_id": "a7f3c1d2-8e45-4b6a-9c30-1f2e5d7a8b90",
+    "name": "API REST para E-commerce",
+    "description": "Colección completa de la API REST para E-commerce (ASP.NET Core 8 + EF Core + JWT + SQL Server).\n\nCÓMO USARLA\n1. Selecciona el entorno \"E-commerce - Local\" (o deja las variables de la colección).\n2. Ejecuta \"Login (admin)\" o \"Login (cliente)\": el token se guarda solo en la variable accessToken.\n3. El resto de peticiones ya lo envían en la cabecera Authorization.\n\nVARIABLES\n- baseUrl: http://localhost:5080 (o https://localhost:7080)\n- accessToken / refreshToken: los rellena el login automáticamente\n- orderId / productId: los rellenan el checkout y la creación de producto\n\nUSUARIOS DE PRUEBA\n- admin@ecommerce.com / Admin123$ (rol Admin)\n- cliente@ecommerce.com / Cliente123$ (rol Customer)\n\nNOTA HTTPS: si usas https://localhost:7080, desactiva la verificación de certificado en Settings > General > SSL certificate verification.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5080",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticacion",
+      "item": [
+        {
+          "name": "Registrar cliente nuevo",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Perez\",\n  \"email\": \"juan.perez@example.com\",\n  \"password\": \"Cliente123$\",\n  \"confirmPassword\": \"Cliente123$\",\n  \"phoneNumber\": \"+52 55 1234 5678\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Crea un usuario con rol Customer y devuelve sus tokens. Si el correo ya existe responde 409."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login correcto (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "    console.log('Token de ADMIN guardado. Expira en ' + data.expiresInSeconds + ' segundos.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ecommerce.com\",\n  \"password\": \"Admin123$\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Inicia sesion como administrador. El script de Tests guarda accessToken y refreshToken automaticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (cliente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login correcto (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "    console.log('Token de CLIENTE guardado. Expira en ' + data.expiresInSeconds + ' segundos.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@ecommerce.com\",\n  \"password\": \"Cliente123$\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Inicia sesion como cliente. Usalo antes de las carpetas 3 y 4."
+          },
+          "response": []
+        },
+        {
+          "name": "Mi perfil",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Devuelve el perfil y los roles del usuario autenticado. Util para comprobar con que token estas trabajando."
+          },
+          "response": []
+        },
+        {
+          "name": "Renovar token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "    console.log('Token renovado.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            },
+            "description": "Genera un access token nuevo. El refresh token rota: el anterior queda revocado."
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar contrasena",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Cliente123$\",\n  \"newPassword\": \"NuevaClave123$\",\n  \"confirmPassword\": \"NuevaClave123$\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "change-password"]
+            },
+            "description": "Cambia la contrasena y revoca todas las sesiones abiertas del usuario."
+          },
+          "response": []
+        },
+        {
+          "name": "Cerrar sesion (revocar token)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/revoke",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "revoke"]
+            },
+            "description": "Revoca el refresh token indicado. Responde 204 sin cuerpo."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Catalogo (publico)",
+      "item": [
+        {
+          "name": "Listar categorias",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"]
+            },
+            "description": "Categorias activas con el numero de productos de cada una. No requiere token."
+          },
+          "response": []
+        },
+        {
+          "name": "Detalle de categoria",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar productos (con filtros)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?search=laptop&sortBy=price&sortDescending=false&pageNumber=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "laptop",
+                  "description": "Busca en nombre, SKU y descripcion"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "4",
+                  "description": "Incluye subcategorias directas",
+                  "disabled": true
+                },
+                {
+                  "key": "minPrice",
+                  "value": "1000",
+                  "disabled": true
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "30000",
+                  "disabled": true
+                },
+                {
+                  "key": "inStock",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "sortBy",
+                  "value": "price",
+                  "description": "name | price | stock | sku"
+                },
+                {
+                  "key": "sortDescending",
+                  "value": "false"
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10",
+                  "description": "Maximo 100"
+                }
+              ]
+            },
+            "description": "Listado paginado. Activa o desactiva los parametros de la pestana Params para probar los filtros."
+          },
+          "response": []
+        },
+        {
+          "name": "Detalle de producto",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Producto por slug",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/slug/laptop-ultrabook-14-pulgadas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "slug", "laptop-ultrabook-14-pulgadas"]
+            },
+            "description": "Busqueda por URL amigable, pensada para el frontend."
+          },
+          "response": []
+        },
+        {
+          "name": "Resenas de un producto",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/1/reviews?pageNumber=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "1", "reviews"],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Cliente (carrito, direcciones, resenas)",
+      "item": [
+        {
+          "name": "Crear o actualizar mi resena",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"title\": \"Buen telefono\",\n  \"comment\": \"La bateria rinde todo el dia.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/3/reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "3", "reviews"]
+            },
+            "description": "Cada usuario solo puede tener una resena por producto: si ya existe, se actualiza."
+          },
+          "response": []
+        },
+        {
+          "name": "Mis direcciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "addresses"]
+            },
+            "description": "El cliente sembrado ya tiene la direccion id 1 marcada como predeterminada."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear direccion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alias\": \"Oficina\",\n  \"recipientName\": \"Maria Gonzalez\",\n  \"street\": \"Av. Insurgentes Sur 1000\",\n  \"street2\": \"Piso 5\",\n  \"city\": \"Ciudad de Mexico\",\n  \"state\": \"CDMX\",\n  \"postalCode\": \"03100\",\n  \"country\": \"Mexico\",\n  \"phoneNumber\": \"+52 55 1000 0002\",\n  \"isDefault\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "addresses"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ver mi carrito",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cart"]
+            },
+            "description": "Devuelve las lineas y los totales estimados: subtotal, IVA (16%) y envio (gratis desde 1500)."
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar producto al carrito",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 5,\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cart", "items"]
+            },
+            "description": "Si el producto ya esta en el carrito acumula la cantidad. Devuelve 400 si no hay stock suficiente."
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar cantidad de una linea",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart/items/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cart", "items", "1"]
+            },
+            "description": "Cambia el 1 final por el id de la linea que devuelve GET /cart."
+          },
+          "response": []
+        },
+        {
+          "name": "Quitar una linea",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart/items/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cart", "items", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vaciar el carrito",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cart"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Compra (checkout y pagos)",
+      "item": [
+        {
+          "name": "Checkout: crear pedido desde el carrito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Pedido creado (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set('orderId', data.id);",
+                  "    console.log('Pedido ' + data.orderNumber + ' creado por un total de ' + data.total);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingAddressId\": 1,\n  \"notes\": \"Entregar por la tarde\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders"]
+            },
+            "description": "Convierte el carrito en pedido, descuenta el stock y deja el pedido en estado Pending. Guarda el id en la variable orderId."
+          },
+          "response": []
+        },
+        {
+          "name": "Pagar el pedido (aprobado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{orderId}},\n  \"method\": \"CreditCard\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardHolderName\": \"MARIA GONZALEZ\",\n  \"expirationDate\": \"12/29\",\n  \"cvv\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments"]
+            },
+            "description": "Pasarela simulada. Si se aprueba, el pedido pasa a Paid. Solo se guardan los ultimos 4 digitos de la tarjeta."
+          },
+          "response": []
+        },
+        {
+          "name": "Pagar el pedido (rechazado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{orderId}},\n  \"method\": \"CreditCard\",\n  \"cardNumber\": \"4111111111110000\",\n  \"cardHolderName\": \"MARIA GONZALEZ\",\n  \"expirationDate\": \"12/29\",\n  \"cvv\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments"]
+            },
+            "description": "Las tarjetas terminadas en 0000 se rechazan a proposito. El pedido sigue en Pending."
+          },
+          "response": []
+        },
+        {
+          "name": "Mis pedidos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?pageNumber=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders"],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "Pending",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Un cliente solo ve sus pedidos; un administrador los ve todos."
+          },
+          "response": []
+        },
+        {
+          "name": "Detalle de un pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders", "{{orderId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pagos de un pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders", "{{orderId}}", "payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelar un pedido",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders", "{{orderId}}", "cancel"]
+            },
+            "description": "Devuelve las unidades al inventario. Un pedido ya enviado o entregado no se puede cancelar."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Administracion (rol Admin)",
+      "item": [
+        {
+          "name": "Crear categoria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Accesorios\",\n  \"description\": \"Complementos y perifericos\",\n  \"parentCategoryId\": 1,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear producto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('productId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"TEC-0001\",\n  \"name\": \"Teclado mecanico RGB\",\n  \"description\": \"Switches azules, retroiluminacion configurable\",\n  \"price\": 1899.00,\n  \"discountPrice\": 1599.00,\n  \"stock\": 25,\n  \"categoryId\": 1,\n  \"mainImageUrl\": \"https://picsum.photos/seed/teclado/600/600\",\n  \"isActive\": true,\n  \"images\": [\n    {\n      \"url\": \"https://picsum.photos/seed/teclado2/600/600\",\n      \"altText\": \"Vista superior\",\n      \"displayOrder\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products"]
+            },
+            "description": "El slug se genera solo a partir del nombre. Un SKU repetido devuelve 409."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar producto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"TEC-0001\",\n  \"name\": \"Teclado mecanico RGB Pro\",\n  \"description\": \"Switches azules, reposamunecas incluido\",\n  \"price\": 2099.00,\n  \"discountPrice\": 1799.00,\n  \"stock\": 30,\n  \"categoryId\": 1,\n  \"mainImageUrl\": \"https://picsum.photos/seed/teclado/600/600\",\n  \"isActive\": true,\n  \"images\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}"]
+            },
+            "description": "La galeria se reemplaza por completo con la lista enviada en images."
+          },
+          "response": []
+        },
+        {
+          "name": "Ajustar stock",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}", "stock"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar producto",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}"]
+            },
+            "description": "Si el producto ya se vendio se desactiva en lugar de borrarse, para conservar el historico."
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar estado de un pedido",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Processing\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders", "{{orderId}}", "status"]
+            },
+            "description": "Transiciones validas: Pending>Paid|Cancelled, Paid>Processing|Cancelled|Refunded, Processing>Shipped|Cancelled, Shipped>Delivered, Delivered>Refunded."
+          },
+          "response": []
+        },
+        {
+          "name": "Todos los pedidos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?pageNumber=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders"],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                },
+                {
+                  "key": "userId",
+                  "value": "2",
+                  "description": "Solo lo puede usar un administrador",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "Paid",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users?pageNumber=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Asignar rol a un usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleName\": \"Admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/2/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "2", "roles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activar o desactivar una cuenta",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/2/status?isActive=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "2", "status"],
+              "query": [
+                {
+                  "key": "isActive",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Al desactivar una cuenta se revocan todos sus refresh tokens."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Estado del servicio",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Comprueba que la API responde. Debe devolver 200 y el texto Healthy."
+      },
+      "response": []
+    }
+  ]
+}

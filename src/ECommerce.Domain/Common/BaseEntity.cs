@@ -1,0 +1,13 @@
+namespace ECommerce.Domain.Common;
+
+/// <summary>
+/// Entidad base con identificador y campos de auditoría comunes a todo el modelo.
+/// </summary>
+public abstract class BaseEntity
+{
+    public int Id { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime? UpdatedAt { get; set; }
+}

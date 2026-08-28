@@ -1,0 +1,40 @@
+## Salidas de compilación
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rtifacts/
+publish/
+*.dll
+*.pdb
+*.exe
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Secretos y configuración local
+appsettings.Local.json
+appsettings.*.local.json
+secrets.json
+*.pfx
+
+## Registros y temporales
+*.log
+*.tmp
+TestResults/
+coverage*.json
+coverage*.xml
+*.trx
+
+## NuGet
+*.nupkg
+.nuget/
+packages/
