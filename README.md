@@ -317,7 +317,25 @@ stock y la pasarela de pagos. `SeedDataHashTests` además verifica que los hashe
 
 ---
 
-## 10. Comprobado de punta a punta
+## 10. Postman
+
+En la carpeta `postman/` hay una colección lista para importar con las 39 peticiones
+organizadas por flujo:
+
+1. Postman → **Import** → arrastra los dos archivos de `postman/`.
+2. Selecciona el entorno **E-commerce - Local** (arriba a la derecha).
+3. Ejecuta `1. Autenticacion → Login (admin)` o `Login (cliente)`. Un script guarda el token
+   automáticamente en la variable `accessToken`, así que **no hay que copiar y pegar nada**:
+   el resto de peticiones ya lo envían en la cabecera.
+4. El checkout guarda además el `orderId`, de modo que las peticiones de pago, consulta y
+   cancelación apuntan solas al pedido recién creado.
+
+Para usar HTTPS cambia `baseUrl` a `https://localhost:7080` y desactiva
+*Settings → General → SSL certificate verification*.
+
+---
+
+## 11. Comprobado de punta a punta
 
 El proyecto se validó contra una instancia real de SQL Server: se ejecutaron los scripts,
 se levantó la API y se recorrió el flujo completo — login con el usuario sembrado por SQL,
